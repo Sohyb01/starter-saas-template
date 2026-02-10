@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import { ChevronsUpDown, LogOutIcon } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import { revalidatePathOnServer } from "@/app/actions";
 
 export function UserNav2({ collapsed = false }: { collapsed?: boolean }) {
   const { data: session } = authClient.useSession();
@@ -33,6 +34,7 @@ export function UserNav2({ collapsed = false }: { collapsed?: boolean }) {
       fetchOptions: {
         onSuccess: () => {
           router.replace("/");
+          revalidatePathOnServer("/");
         },
       },
     });
@@ -67,7 +69,7 @@ export function UserNav2({ collapsed = false }: { collapsed?: boolean }) {
             <>
               <div className="flex flex-col text-detail">
                 <p className="capitalize break-all line-clamp-1">
-                  {session.user.name.slice(0, 2)}
+                  {session.user.name}
                 </p>
                 <span className="text-muted-foreground break-all line-clamp-1">
                   {session.user.email}

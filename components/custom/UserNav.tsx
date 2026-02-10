@@ -26,7 +26,7 @@ import { LogOutIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-//
+import { revalidatePathOnServer } from "@/app/actions";
 
 export function UserNav({ className }: { className?: string }) {
   const router = useRouter();
@@ -37,6 +37,7 @@ export function UserNav({ className }: { className?: string }) {
       fetchOptions: {
         onSuccess: () => {
           router.replace("/");
+          revalidatePathOnServer("/");
         },
       },
     });

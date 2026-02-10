@@ -63,21 +63,27 @@ export async function POST(request: Request) {
     if (!customerId) {
       return new Response("Customer ID not found", { status: 400 });
     }
-    const productUpsert = upsertProduct({
-      variant_id: variantId.toString(),
-      product_id: productId.toString(),
-      name: productName,
-      price: price!,
-    });
+    const [productUpsert, customerUpsert] = await Promise.all([
+      upsertProduct({
+        variant_id: variantId.toString(),
+        product_id: productId.toString(),
+        name: productName,
+        price: price!,
+      }),
+      updateCustomerId({
+        userId,
+        customerId: customerId.toString(),
+      }),
+    ]);
 
-    const customerUpsert = updateCustomerId({
-      userId,
-      customerId: customerId.toString(),
-    });
+    if (!productUpsert.success) {
+      return new Response(productUpsert.message, { status: 500 });
+    }
+    if (!customerUpsert.success) {
+      return new Response(customerUpsert.message, { status: 500 });
+    }
 
-    await Promise.all([productUpsert, customerUpsert]);
-
-    await insertSubscription({
+    const subscriptionUpsert = await insertSubscription({
       customerId: customerId.toString(),
       subscriptionId:
         subscription.attributes.first_subscription_item.subscription_id,
@@ -90,6 +96,10 @@ export async function POST(request: Request) {
       createdAt: subscription.attributes.created_at,
       updatedAt: subscription.attributes.updated_at,
     });
+
+    if (!subscriptionUpsert.success) {
+      return new Response(subscriptionUpsert.message, { status: 500 });
+    }
 
     return new Response("Order Complete", { status: 200 });
   }

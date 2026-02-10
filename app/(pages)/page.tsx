@@ -6,9 +6,11 @@ import { PricingSection } from "./PricingSection";
 
 export default async function Home() {
   const session = await getSession();
-  const subscriptionData = session?.user.id
+  const subscriptionRes = session?.user.id
     ? await hasSubscriptionEndedByAccountId(session?.user.id)
     : null;
+  const subscriptionData =
+    subscriptionRes?.success === true ? subscriptionRes.data : null;
   const products = await getSubscriptionProducts();
 
   return (

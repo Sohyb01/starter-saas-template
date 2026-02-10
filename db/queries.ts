@@ -5,6 +5,31 @@ import { db } from "@/db"; // <- adjust to your db export
 import { account, products, subscriptions, user } from "@/db/schema"; // <- adjust path
 import { eq, desc, sql } from "drizzle-orm";
 
+export interface ResponseObj<T> {
+  success: boolean;
+  message: string;
+  data?: T;
+  error?: string;
+  errorCode?: number; // optional error code for further identification
+}
+
+function ok<T>(message: string, data?: T): ResponseObj<T> {
+  return { success: true, message, data };
+}
+
+function fail<T>(
+  message: string,
+  error: unknown,
+  errorCode?: number,
+): ResponseObj<T> {
+  return {
+    success: false,
+    message,
+    error: error instanceof Error ? error.message : String(error),
+    errorCode,
+  };
+}
+
 type SubscriptionStatusResult = {
   hasEnded: boolean;
   endsAt: Date | null;
@@ -18,60 +43,69 @@ type SubscriptionStatusResult = {
  */
 export async function hasSubscriptionEndedByAccountId(
   accountId: string,
-): Promise<SubscriptionStatusResult> {
-  const sub = await db.query.subscriptions.findFirst({
-    where: eq(subscriptions.customerId, accountId),
-    orderBy: [desc(subscriptions.updatedAt)], // "current" = latest updated record
-    columns: {
-      endsAt: true,
-      status: true,
-      cancelled: true,
-    },
-  });
+): Promise<ResponseObj<SubscriptionStatusResult>> {
+  try {
+    const sub = await db.query.subscriptions.findFirst({
+      where: eq(subscriptions.customerId, accountId),
+      orderBy: [desc(subscriptions.updatedAt)], // "current" = latest updated record
+      columns: {
+        endsAt: true,
+        status: true,
+        cancelled: true,
+      },
+    });
 
-  // No subscription record => treat as ended (no active access)
-  if (!sub) {
-    return { hasEnded: true, endsAt: null, status: null, cancelled: null };
-  }
+    // No subscription record => treat as ended (no active access)
+    if (!sub) {
+      return ok("No subscription record found", {
+        hasEnded: true,
+        endsAt: null,
+        status: null,
+        cancelled: null,
+      });
+    }
 
-  const now = new Date();
+    const now = new Date();
 
-  // If endsAt is set and in the past => ended
-  if (sub.endsAt && sub.endsAt.getTime() <= now.getTime()) {
-    return {
-      hasEnded: true,
-      endsAt: sub.endsAt,
-      status: sub.status,
-      cancelled: sub.cancelled ?? null,
-    };
-  }
+    // If endsAt is set and in the past => ended
+    if (sub.endsAt && sub.endsAt.getTime() <= now.getTime()) {
+      return ok("Subscription has ended", {
+        hasEnded: true,
+        endsAt: sub.endsAt,
+        status: sub.status,
+        cancelled: sub.cancelled ?? null,
+      });
+    }
 
-  // If endsAt is null, fall back to status/cancelled to decide.
-  // Adjust these rules to your status values.
-  const normalizedStatus = (sub.status ?? "").toLowerCase();
-  const endedByStatus =
-    normalizedStatus === "ended" ||
-    normalizedStatus === "expired" ||
-    normalizedStatus === "canceled" ||
-    normalizedStatus === "cancelled" ||
-    normalizedStatus === "inactive";
+    // If endsAt is null, fall back to status/cancelled to decide.
+    // Adjust these rules to your status values.
+    const normalizedStatus = (sub.status ?? "").toLowerCase();
+    const endedByStatus =
+      normalizedStatus === "ended" ||
+      normalizedStatus === "expired" ||
+      normalizedStatus === "canceled" ||
+      normalizedStatus === "cancelled" ||
+      normalizedStatus === "inactive";
 
-  if (endedByStatus) {
-    return {
-      hasEnded: true,
+    if (endedByStatus) {
+      return ok("Subscription has ended", {
+        hasEnded: true,
+        endsAt: sub.endsAt ?? null,
+        status: sub.status,
+        cancelled: sub.cancelled ?? null,
+      });
+    }
+
+    // Otherwise, subscription is considered not ended
+    return ok("Subscription is active", {
+      hasEnded: false,
       endsAt: sub.endsAt ?? null,
       status: sub.status,
       cancelled: sub.cancelled ?? null,
-    };
+    });
+  } catch (error) {
+    return fail("Failed to check subscription status", error);
   }
-
-  // Otherwise, subscription is considered not ended
-  return {
-    hasEnded: false,
-    endsAt: sub.endsAt ?? null,
-    status: sub.status,
-    cancelled: sub.cancelled ?? null,
-  };
 }
 
 /**
@@ -88,42 +122,52 @@ export async function upsertProduct({
   product_id: string;
   name: string;
   price: number;
-}) {
-  const variantId = Number(variant_id);
-  const productId = Number(product_id);
+}): Promise<ResponseObj<typeof products.$inferSelect>> {
+  try {
+    const variantId = Number(variant_id);
+    const productId = Number(product_id);
 
-  if (!Number.isSafeInteger(variantId)) {
-    throw new Error(
-      `Invalid variant_id (must be a safe integer): ${variant_id}`,
-    );
-  }
-  if (!Number.isSafeInteger(productId)) {
-    throw new Error(
-      `Invalid product_id (must be a safe integer): ${product_id}`,
-    );
-  }
+    if (!Number.isSafeInteger(variantId)) {
+      return fail(
+        `Invalid variant_id (must be a safe integer): ${variant_id}`,
+        "invalid_variant_id",
+      );
+    }
+    if (!Number.isSafeInteger(productId)) {
+      return fail(
+        `Invalid product_id (must be a safe integer): ${product_id}`,
+        "invalid_product_id",
+      );
+    }
 
-  const [row] = await db
-    .insert(products)
-    .values({
-      variantId,
-      productId,
-      name,
-      price,
-      // createdAt/updatedAt have defaults; we'll explicitly bump updatedAt on conflict
-    })
-    .onConflictDoUpdate({
-      target: products.variantId, // == ON CONFLICT (variant_id)
-      set: {
+    const [row] = await db
+      .insert(products)
+      .values({
+        variantId,
         productId,
         name,
         price,
-        updatedAt: sql`now()`,
-      },
-    })
-    .returning();
+        // createdAt/updatedAt have defaults; we'll explicitly bump updatedAt on conflict
+      })
+      .onConflictDoUpdate({
+        target: products.variantId, // == ON CONFLICT (variant_id)
+        set: {
+          productId,
+          name,
+          price,
+          updatedAt: sql`now()`,
+        },
+      })
+      .returning();
 
-  return row ?? null;
+    if (!row) {
+      return fail("Product upsert failed", "no_row_returned");
+    }
+
+    return ok("Product upserted", row);
+  } catch (error) {
+    return fail("Failed to upsert product", error);
+  }
 }
 
 /**
@@ -136,16 +180,24 @@ export async function updateCustomerId({
 }: {
   userId: string;
   customerId: string;
-}) {
-  const [row] = await db
-    .update(user)
-    .set({
-      customerId, // maps to "customer_id"
-    })
-    .where(eq(user.id, userId)) // maps to "user_id"
-    .returning();
+}): Promise<ResponseObj<typeof user.$inferSelect>> {
+  try {
+    const [row] = await db
+      .update(user)
+      .set({
+        customerId, // maps to "customer_id"
+      })
+      .where(eq(user.id, userId)) // maps to "user_id"
+      .returning();
 
-  return row ?? null;
+    if (!row) {
+      return fail("Customer update failed", "no_row_returned");
+    }
+
+    return ok("Customer updated", row);
+  } catch (error) {
+    return fail("Failed to update customer", error);
+  }
 }
 
 /**
@@ -154,16 +206,20 @@ export async function updateCustomerId({
  */
 export async function getUserRoleByUserId(
   userId: string,
-): Promise<"admin" | "user"> {
-  const row = await db.query.account.findFirst({
-    where: eq(account.userId, userId),
-    orderBy: [desc(account.updatedAt)],
-    columns: {
-      role: true,
-    },
-  });
+): Promise<ResponseObj<"admin" | "user">> {
+  try {
+    const row = await db.query.account.findFirst({
+      where: eq(account.userId, userId),
+      orderBy: [desc(account.updatedAt)],
+      columns: {
+        role: true,
+      },
+    });
 
-  return row?.role ?? "user";
+    return ok("User role resolved", row?.role ?? "user");
+  } catch (error) {
+    return fail("Failed to get user role", error);
+  }
 }
 
 export async function insertSubscription({
@@ -188,27 +244,15 @@ export async function insertSubscription({
   endsAt: string | null;
   createdAt: string;
   updatedAt: string;
-}) {
-  const productIdNum = Number(productId);
-  const variantIdNum = Number(variantId);
+}): Promise<ResponseObj<typeof subscriptions.$inferSelect>> {
+  try {
+    const productIdNum = Number(productId);
+    const variantIdNum = Number(variantId);
 
-  const [row] = await db
-    .insert(subscriptions)
-    .values({
-      customerId,
-      subscriptionId,
-      productId: productIdNum,
-      variantId: variantIdNum,
-      status,
-      cancelled,
-      renewsAt: renewsAt ? new Date(renewsAt) : null,
-      endsAt: endsAt ? new Date(endsAt) : null,
-      createdAt: new Date(createdAt),
-      updatedAt: new Date(updatedAt),
-    })
-    .onConflictDoUpdate({
-      target: subscriptions.customerId, // ON CONFLICT (customer_id)
-      set: {
+    const [row] = await db
+      .insert(subscriptions)
+      .values({
+        customerId,
         subscriptionId,
         productId: productIdNum,
         variantId: variantIdNum,
@@ -216,10 +260,30 @@ export async function insertSubscription({
         cancelled,
         renewsAt: renewsAt ? new Date(renewsAt) : null,
         endsAt: endsAt ? new Date(endsAt) : null,
+        createdAt: new Date(createdAt),
         updatedAt: new Date(updatedAt),
-      },
-    })
-    .returning();
+      })
+      .onConflictDoUpdate({
+        target: subscriptions.customerId, // ON CONFLICT (customer_id)
+        set: {
+          subscriptionId,
+          productId: productIdNum,
+          variantId: variantIdNum,
+          status,
+          cancelled,
+          renewsAt: renewsAt ? new Date(renewsAt) : null,
+          endsAt: endsAt ? new Date(endsAt) : null,
+          updatedAt: new Date(updatedAt),
+        },
+      })
+      .returning();
 
-  return row ?? null;
+    if (!row) {
+      return fail("Subscription upsert failed", "no_row_returned");
+    }
+
+    return ok("Subscription upserted", row);
+  } catch (error) {
+    return fail("Failed to upsert subscription", error);
+  }
 }

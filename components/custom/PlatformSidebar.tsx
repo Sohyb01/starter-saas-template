@@ -57,9 +57,7 @@ const PlatformSidebar = () => {
         {/* All groups */}
         <SidebarGroupsLinks
           expanded={expanded}
-          groups={
-            DashboardNavigationLinks[session.user.role as "admin" | "user"]
-          }
+          groups={DashboardNavigationLinks[session.user.role]}
         />
       </div>
 

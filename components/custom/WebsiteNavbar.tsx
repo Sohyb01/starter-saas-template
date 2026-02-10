@@ -8,12 +8,9 @@ import {
 import { Menu } from "lucide-react";
 import { Logo } from "./LogoSVGs";
 import Link from "next/link";
-import { getSession } from "@/auth";
-import { UserNav2 } from "./UserNav2";
+import WebsiteUserNav from "./WebsiteUserNav";
 
 export default async function WebsiteNavbar() {
-  const session = await getSession();
-
   return (
     <nav className="absolute top-0 w-full nav py-6">
       <div className="nav-internal items-center lg:max-w-393 lg:px-20 ">
@@ -26,18 +23,16 @@ export default async function WebsiteNavbar() {
 
         {/* CTA and Menu Button */}
         <div className="hidden md:flex items-center gap-3 w-fit">
-          {session?.user ? (
-            <>
-              <UserNav2 />
-            </>
-          ) : (
-            <Link
-              href="/login"
-              className={buttonVariants({ variant: "default" })}
-            >
-              Start for free
-            </Link>
-          )}
+          <WebsiteUserNav
+            fallback={
+              <Link
+                href="/login"
+                className={buttonVariants({ variant: "default" })}
+              >
+                Start for free
+              </Link>
+            }
+          />
           {/* Mobile sheet */}
           <Sheet>
             <SheetTrigger asChild className="lg:hidden">
