@@ -40,9 +40,12 @@ export function PricingCard({ product }: { product: TSubscriptionsProduct }) {
   const onSubscribe = () => {
     startTransition(async () => {
       if (!session?.user) {
+        if (!product.variant_id) return;
         await authClient.signIn.social({
           provider: "google",
-          callbackURL: "/get-started",
+          callbackURL: `/get-started?variantId=${encodeURIComponent(
+            product.variant_id,
+          )}`,
         });
         return;
       }

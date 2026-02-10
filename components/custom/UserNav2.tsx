@@ -21,16 +21,25 @@ import {
 import { toast } from "sonner";
 import { ChevronsUpDown, LogOutIcon } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 export function UserNav2({ collapsed = false }: { collapsed?: boolean }) {
   const { data: session } = authClient.useSession();
+  const router = useRouter();
 
   const LogOut = async () => {
     toast("Logging out...");
-    await authClient.signOut();
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.replace("/");
+        },
+      },
+    });
+    router.replace("/");
   };
 
-  if (!session) return null;
+  if (!session?.user) return null;
 
   return (
     <DropdownMenu>

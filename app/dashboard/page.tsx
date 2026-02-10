@@ -2,15 +2,21 @@
 
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function RedirectPage() {
   const router = useRouter();
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending } = authClient.useSession();
+  console.log("TEST 1: ", session);
 
-  if (session == null || session.user == null) {
-    router.push("/login");
-  } else {
-    router.push(`/dashboard/${session.user.role}/home`);
-  }
-  // Redirect to the 'finances' subpage
+  useEffect(() => {
+    if (isPending) return;
+    if (session == null || session.user == null) {
+      router.replace("/login");
+      return;
+    }
+    router.replace(`/dashboard/${session.user.role}/home`);
+  }, [router, session, isPending]);
+
+  return null;
 }

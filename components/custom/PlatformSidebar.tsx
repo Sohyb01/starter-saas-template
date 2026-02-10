@@ -36,6 +36,7 @@ export const DashboardNavigationLinks = {
 const PlatformSidebar = () => {
   const [expanded, setExpanded] = useState(true);
   const { data: session } = authClient.useSession();
+  if (!session?.user) return null;
 
   return (
     <nav
@@ -57,7 +58,7 @@ const PlatformSidebar = () => {
         <SidebarGroupsLinks
           expanded={expanded}
           groups={
-            DashboardNavigationLinks[session!.user.role as "admin" | "user"]
+            DashboardNavigationLinks[session.user.role as "admin" | "user"]
           }
         />
       </div>

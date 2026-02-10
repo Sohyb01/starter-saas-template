@@ -25,15 +25,25 @@ import { AlertDialogAction } from "@/components/ui/alert-dialog";
 import { LogOutIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { authClient } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 //
 
 export function UserNav({ className }: { className?: string }) {
+  const router = useRouter();
+
   const LogOut = async () => {
     toast("Logging out...");
-    await authClient.signOut();
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.replace("/");
+        },
+      },
+    });
   };
 
   const { data: session } = authClient.useSession();
+  if (!session?.user) return null;
 
   return (
     <DropdownMenu>
@@ -42,11 +52,11 @@ export function UserNav({ className }: { className?: string }) {
           <Avatar className="h-10 min-h-10 w-10 min-w-10">
             <AvatarImage
               className="h-10 min-h-10 w-10 min-w-10"
-              src={session!.user.image ?? undefined}
-              alt={session!.user.name.slice(0, 2)}
+              src={session.user.image ?? undefined}
+              alt={session.user.name.slice(0, 2)}
             />
             <AvatarFallback className="h-10 min-h-10 w-10 min-w-10 uppercase text-detail aspect-square">
-              {session!.user.name.slice(0, 2)}
+              {session.user.name.slice(0, 2)}
             </AvatarFallback>
           </Avatar>
         </Button>
@@ -55,7 +65,7 @@ export function UserNav({ className }: { className?: string }) {
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
             <p className="text-p_ui capitalize">
-              {session!.user.name.slice(0, 2)}
+              {session.user.name.slice(0, 2)}
             </p>
           </div>
         </DropdownMenuLabel>

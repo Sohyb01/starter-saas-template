@@ -22,7 +22,8 @@ const SidebarGroupsLinks = ({
   }[];
 }) => {
   const pathname = usePathname();
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending } = authClient.useSession();
+  if (isPending || !session?.user) return null;
 
   return (
     <>
@@ -35,7 +36,7 @@ const SidebarGroupsLinks = ({
             return (
               <Link
                 key={item.title}
-                href={`/dashboard/${session!.user.role}/${item.url}`}
+                href={`/dashboard/${session.user.role}/${item.url}`}
               >
                 <Button
                   variant="ghost"
