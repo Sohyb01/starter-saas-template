@@ -39,8 +39,11 @@ export function PricingCard({ product }: { product: TSubscriptionsProduct }) {
 
     startTransition(async () => {
       const checkoutUrl = await handleCheckout(product.variant_id!);
+      console.log("TEST: ", checkoutUrl);
       if (checkoutUrl) {
         router.push(checkoutUrl);
+      } else {
+        router.push("/login");
       }
     });
   };

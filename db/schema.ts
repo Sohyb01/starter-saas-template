@@ -10,7 +10,7 @@ import {
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(), // required
-  customerId: text("id").unique(), // ID from Lemonsqueezy
+  customerId: text("customerId").unique(), // ID from Lemonsqueezy
   name: text("name").notNull(), // required
   email: text("email").notNull().unique(), // required
   emailVerified: boolean("emailVerified").notNull(), // required
@@ -67,8 +67,8 @@ export const verification = pgTable("verification", {
  * Products table
  */
 export const products = pgTable("products", {
-  variantId: bigint("variant_id", { mode: "number" }).primaryKey(),
-  productId: bigint("product_id", { mode: "number" }).notNull(),
+  variantId: bigint("variantId", { mode: "number" }).primaryKey(),
+  productId: bigint("productId", { mode: "number" }).notNull(),
   name: text("name").notNull(),
   price: integer("price").notNull(),
   createdAt: timestamp("createdAt").notNull().defaultNow(), // required
@@ -81,19 +81,19 @@ export const products = pgTable("products", {
 export const subscriptions = pgTable("subscriptions", {
   id: uuid("id").primaryKey().defaultRandom(),
 
-  customerId: text("customer_id")
+  customerId: text("customerId")
     .notNull()
     .unique()
-    .references(() => account.id, {
+    .references(() => user.customerId, {
       onUpdate: "cascade",
       onDelete: "cascade",
     }),
 
-  subscriptionId: integer("subscription_id").notNull(),
+  subscriptionId: integer("subscriptionId").notNull(),
 
-  productId: bigint("product_id", { mode: "number" }).notNull(),
+  productId: bigint("productId", { mode: "number" }).notNull(),
 
-  variantId: bigint("variant_id", { mode: "number" })
+  variantId: bigint("variantId", { mode: "number" })
     .notNull()
     .references(() => products.variantId, {
       onUpdate: "cascade",
@@ -103,8 +103,8 @@ export const subscriptions = pgTable("subscriptions", {
 
   cancelled: boolean("cancelled").default(false),
 
-  renewsAt: timestamp("renews_at", { withTimezone: true }),
-  endsAt: timestamp("ends_at", { withTimezone: true }),
+  renewsAt: timestamp("renewsAt", { withTimezone: true }),
+  endsAt: timestamp("endsAt", { withTimezone: true }),
 
   createdAt: timestamp("createdAt").notNull().defaultNow(), // required
   updatedAt: timestamp("updatedAt").notNull().defaultNow(), // required
