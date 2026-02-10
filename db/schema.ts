@@ -6,6 +6,7 @@ import {
   bigint,
   integer,
   uuid,
+  pgEnum,
 } from "drizzle-orm/pg-core";
 
 export const user = pgTable("user", {
@@ -34,8 +35,12 @@ export const session = pgTable("session", {
   updatedAt: timestamp("updatedAt").notNull(),
 });
 
+export const rolesEnum = pgEnum("roles", ["admin", "user"]);
+
 export const account = pgTable("account", {
   id: text("id").primaryKey(),
+
+  role: rolesEnum().notNull().default("user"),
   userId: text("userId")
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),

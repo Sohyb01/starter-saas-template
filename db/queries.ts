@@ -2,7 +2,7 @@
 
 // src/server/subscriptions.ts
 import { db } from "@/db"; // <- adjust to your db export
-import { products, subscriptions, user } from "@/db/schema"; // <- adjust path
+import { account, products, subscriptions, user } from "@/db/schema"; // <- adjust path
 import { eq, desc, sql } from "drizzle-orm";
 
 type SubscriptionStatusResult = {
@@ -146,6 +146,24 @@ export async function updateCustomerId({
     .returning();
 
   return row ?? null;
+}
+
+/**
+ * Returns the user's role ("admin" | "user") by their user id.
+ * Defaults to "user" if no account record is found.
+ */
+export async function getUserRoleByUserId(
+  userId: string,
+): Promise<"admin" | "user"> {
+  const row = await db.query.account.findFirst({
+    where: eq(account.userId, userId),
+    orderBy: [desc(account.updatedAt)],
+    columns: {
+      role: true,
+    },
+  });
+
+  return row?.role ?? "user";
 }
 
 export async function insertSubscription({

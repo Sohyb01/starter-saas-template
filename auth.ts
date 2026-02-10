@@ -3,15 +3,16 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { customSession } from "better-auth/plugins";
 import { db } from "@/db"; // your drizzle instance
 import { headers } from "next/headers";
+import { getUserRoleByUserId } from "./db/queries";
 
 export const auth = betterAuth({
   plugins: [
     customSession(async ({ user, session }) => {
-      //   const roles = findUserRoles(session.session.userId);
+      const role = await getUserRoleByUserId(session.userId);
       return {
         user: {
           ...user,
-          role: "admin" as "admin" | "user",
+          role: role,
         },
         session,
       };

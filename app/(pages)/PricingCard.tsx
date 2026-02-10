@@ -16,10 +16,13 @@ import {
   handleCheckout,
   TSubscriptionsProduct,
 } from "@/lib/lemon-squeezy/server";
+import { Loader2 } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
 
 export function PricingCard({ product }: { product: TSubscriptionsProduct }) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const { data: session } = authClient.useSession();
 
   const formatProductName = (name: string) => {
     return name
@@ -35,11 +38,17 @@ export function PricingCard({ product }: { product: TSubscriptionsProduct }) {
   };
 
   const onSubscribe = () => {
-    if (!product.variant_id) return;
-
     startTransition(async () => {
+      if (!session?.user) {
+        await authClient.signIn.social({
+          provider: "google",
+          callbackURL: "/get-started",
+        });
+        return;
+      }
+
       const checkoutUrl = await handleCheckout(product.variant_id!);
-      console.log("TEST: ", checkoutUrl);
+
       if (checkoutUrl) {
         router.push(checkoutUrl);
       } else {
@@ -70,11 +79,12 @@ export function PricingCard({ product }: { product: TSubscriptionsProduct }) {
       </CardContent>
       <CardFooter>
         <Button
-          className="w-full"
+          className="w-full gap-1 items-center"
           size="lg"
           onClick={onSubscribe}
           disabled={isPending || !product.variant_id}
         >
+          {isPending && <Loader2 className="animate-spin" />}
           {isPending ? "Processing..." : "Subscribe"}
         </Button>
       </CardFooter>
