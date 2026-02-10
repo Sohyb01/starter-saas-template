@@ -55,7 +55,11 @@ export function PricingCard({ product }: { product: TSubscriptionsProduct }) {
       if (checkoutUrl) {
         router.push(checkoutUrl);
       } else {
-        router.push("/login");
+        if (session?.user) {
+          router.push(`/dashboard/${session.user.role}/home`);
+        } else {
+          router.push("/login");
+        }
       }
     });
   };

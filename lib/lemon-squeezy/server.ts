@@ -1,6 +1,9 @@
 "use server";
 
 import { getSession } from "@/auth";
+import { db } from "@/db";
+import { user } from "@/db/schema";
+import { hasSubscriptionEndedByAccountId } from "@/db/queries";
 import {
   createCheckout,
   getSubscription,
@@ -9,6 +12,7 @@ import {
   listProducts,
   listVariants,
 } from "@lemonsqueezy/lemonsqueezy.js";
+import { eq } from "drizzle-orm";
 
 export async function configureLemonSqueezy() {
   const requiredVars = [
@@ -203,6 +207,24 @@ export async function handleCheckout(variantId: string) {
   const session = await getSession();
   if (!session || !session.user) {
     return null;
+  }
+
+  const userRow = await db.query.user.findFirst({
+    where: eq(user.id, session.user.id),
+    columns: {
+      customerId: true,
+    },
+  });
+
+  const customerId = userRow?.customerId ?? null;
+  if (customerId) {
+    const subStatus = await hasSubscriptionEndedByAccountId(customerId);
+    if (!subStatus.success) {
+      return null;
+    }
+    if (subStatus.data && subStatus.data.hasEnded == false) {
+      return null;
+    }
   }
 
   const checkoutUrl = await createCheckoutUrl({
