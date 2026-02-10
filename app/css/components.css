@@ -1,0 +1,51 @@
+
+@reference "../../app/globals.css";
+
+.nav {
+  @apply w-full flex justify-center z-50 mx-auto text-foreground py-4;
+}
+.nav-internal {
+  @apply w-full flex justify-between items-center px-4;
+}
+.dashboard-sizing {
+  height: calc(100vh - 66.4px);
+}
+
+/* Navbar Sheets and Sidebars */
+.sidebar-groups-container {
+  @apply flex flex-col gap-8 w-full items-start;
+}
+.sidebar-group {
+  @apply flex flex-col gap-2 w-full items-start text-detail;
+}
+.sidebar-links-container {
+  @apply flex flex-col gap-2 w-full;
+}
+.sidebar-button {
+  @apply gap-2 w-full justify-start items-center text-detail text-start;
+}
+.sidebar-group-label{
+  @apply uppercase text-detail tracking-[2px] text-muted-foreground font-extrabold
+}
+
+.dashboard-tab-wrapper {
+  @apply flex w-full flex-col gap-4;
+}
+
+/* Legal text styling and spacing for legal pages */
+.legal p {
+  @apply text-p
+ }
+
+.legal h1 {
+ @apply text-h1
+}
+.legal h2 {
+  @apply text-h2
+ }
+ .legal h3 {
+  @apply text-h3
+ }
+ .legal h4 {
+  @apply text-h4
+ }
