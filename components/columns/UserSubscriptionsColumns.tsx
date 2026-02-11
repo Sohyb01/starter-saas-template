@@ -29,14 +29,14 @@ export const UserSubscriptionsColumns: ColumnDef<UserSubscriptionRow>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      return <div className="capitalize">{row.getValue("name")}</div>;
+      return <div className="capitalize">{row.getValue("status")}</div>;
     },
   },
   {
     accessorKey: "cancelled",
     header: "Cancelled",
     cell: ({ row }) => {
-      return <div className="capitalize">{row.getValue("name")}</div>;
+      return <div className="capitalize">{row.getValue("cancelled")}</div>;
     },
   },
   {
