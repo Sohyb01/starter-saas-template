@@ -7,6 +7,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ContactIcon,
+  DollarSignIcon,
 } from "lucide-react";
 import { UserNav2 } from "./UserNav2";
 import { authClient } from "@/lib/auth-client";
@@ -27,7 +28,7 @@ export const DashboardNavigationLinks = {
       label: "Platform",
       items: [
         { title: "Home", url: "home", icon: ContactIcon },
-        { title: "Test", url: "test", icon: MonitorPlay },
+        { title: "Subscriptions", url: "subscriptions", icon: DollarSignIcon },
       ],
     },
   ],
