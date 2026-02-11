@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
 import { handleCheckout } from "@/lib/lemon-squeezy/server";
@@ -9,6 +9,7 @@ import { Loader2 } from "lucide-react";
 export default function CheckoutRedirect({ variantId }: { variantId: string }) {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
+  const hasStartedRef = useRef(false);
 
   useEffect(() => {
     if (isPending) return;
@@ -20,6 +21,8 @@ export default function CheckoutRedirect({ variantId }: { variantId: string }) {
       router.replace("/login");
       return;
     }
+    if (hasStartedRef.current) return;
+    hasStartedRef.current = true;
 
     let cancelled = false;
     (async () => {

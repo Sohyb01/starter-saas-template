@@ -222,7 +222,7 @@ export async function getUserRoleByUserId(
   }
 }
 
-export async function insertSubscription({
+export async function upsertSubscription({
   customerId,
   subscriptionId,
   productId,
@@ -240,7 +240,7 @@ export async function insertSubscription({
   variantId: string;
   status: string;
   cancelled: boolean;
-  renewsAt: string;
+  renewsAt: string | null;
   endsAt: string | null;
   createdAt: string;
   updatedAt: string;

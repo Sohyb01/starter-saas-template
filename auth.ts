@@ -8,7 +8,7 @@ import { getUserRoleByUserId } from "./db/queries";
 export const auth = betterAuth({
   plugins: [
     customSession(async ({ user, session }) => {
-      const roleResponse = await getUserRoleByUserId(session.userId);
+      const roleResponse = await getUserRoleByUserId(session.userId); // (From the account table)
       return {
         user: {
           ...user,

@@ -7,7 +7,6 @@ import { useEffect } from "react";
 export default function RedirectPage() {
   const router = useRouter();
   const { data: session, isPending } = authClient.useSession();
-  console.log("TEST 1: ", session);
 
   useEffect(() => {
     if (isPending) return;

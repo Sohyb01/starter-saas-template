@@ -1,10 +1,5 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { useRouter } from "next/navigation";
-
-export default function AdminPage() {
-  const router = useRouter();
-
-  router.push("/dashboard/user/home");
-  // Redirect to the 'finances' subpage
+export default function UserPage() {
+  redirect("/dashboard/user/home");
 }

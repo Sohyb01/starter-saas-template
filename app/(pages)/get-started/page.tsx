@@ -1,9 +1,13 @@
 import { getSession } from "@/auth";
+import { db } from "@/db";
+import { user } from "@/db/schema";
 import { hasSubscriptionEndedByAccountId } from "@/db/queries";
 import { getSubscriptionProducts } from "@/lib/lemon-squeezy/server";
 import Link from "next/link";
 import { PricingSection } from "../PricingSection";
 import CheckoutRedirect from "./CheckoutRedirect";
+import { eq } from "drizzle-orm";
+import { buttonVariants } from "@/components/ui/button";
 
 export default async function Home({
   searchParams,
@@ -23,8 +27,14 @@ export default async function Home({
   }
 
   const session = await getSession();
-  const subscriptionRes = session?.user.id
-    ? await hasSubscriptionEndedByAccountId(session?.user.id)
+  const userRow = session?.user.id
+    ? await db.query.user.findFirst({
+        where: eq(user.id, session.user.id),
+        columns: { customerId: true },
+      })
+    : null;
+  const subscriptionRes = userRow?.customerId
+    ? await hasSubscriptionEndedByAccountId(userRow.customerId)
     : null;
   const subscriptionData =
     subscriptionRes?.success === true ? subscriptionRes.data : null;
@@ -36,12 +46,14 @@ export default async function Home({
         {!subscriptionData || subscriptionData.hasEnded || !session?.user.id ? (
           <PricingSection products={products} />
         ) : (
-          <div>
-            {session ? (
-              <Link href={`/dashboard/${session.user.role}`}>Go to portal</Link>
-            ) : (
-              <p>Subscription is active</p>
-            )}
+          <div className="space-y-2 w-full grid place-items-center">
+            <p className="text-p">Subscription is active</p>
+            <Link
+              className={buttonVariants({ variant: "default" })}
+              href={`/dashboard/${session.user.role}`}
+            >
+              Go to dashboard
+            </Link>
           </div>
         )}
       </div>

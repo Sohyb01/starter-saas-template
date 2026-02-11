@@ -100,7 +100,6 @@ export async function createCheckoutUrl({
     console.warn(
       "NEXT_PUBLIC_BASE_URL is not defined, using default redirect URL",
     );
-    return null;
   }
 
   const checkout = await createCheckout(

@@ -1,6 +1,6 @@
 "use server";
 import {
-  insertSubscription,
+  upsertSubscription,
   updateCustomerId,
   upsertProduct,
 } from "@/db/queries";
@@ -53,6 +53,7 @@ export async function POST(request: Request) {
     }
 
     const subscription = data.data as Subscription;
+    const eventName = data.meta.event_name as string;
     const productId = subscription.attributes.product_id;
     const variantId = subscription.attributes.variant_id;
     const productName = subscription.attributes.product_name;
@@ -83,15 +84,21 @@ export async function POST(request: Request) {
       return new Response(customerUpsert.message, { status: 500 });
     }
 
-    const subscriptionUpsert = await insertSubscription({
+    const isCancelEvent = eventName === "subscription_cancelled";
+    const cancelled =
+      subscription.attributes.cancelled ?? (isCancelEvent ? true : false);
+    const status = isCancelEvent ? "cancelled" : subscription.attributes.status;
+    const renewsAt = isCancelEvent ? null : subscription.attributes.renews_at;
+
+    const subscriptionUpsert = await upsertSubscription({
       customerId: customerId.toString(),
       subscriptionId:
         subscription.attributes.first_subscription_item.subscription_id,
       productId: productId.toString(),
       variantId: variantId.toString(),
-      status: subscription.attributes.status,
-      cancelled: subscription.attributes.cancelled,
-      renewsAt: subscription.attributes.renews_at,
+      status,
+      cancelled,
+      renewsAt,
       endsAt: subscription.attributes.ends_at,
       createdAt: subscription.attributes.created_at,
       updatedAt: subscription.attributes.updated_at,
