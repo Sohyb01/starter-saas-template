@@ -69,7 +69,9 @@ export default async function SubscriptionPage() {
   });
 
   const statusRes = await hasSubscriptionEndedByAccountId(userRow.customerId);
-  const hasEnded = statusRes.success ? statusRes.data?.hasEnded ?? true : true;
+  const hasEnded = statusRes.success
+    ? (statusRes.data?.hasEnded ?? true)
+    : true;
 
   const portalUrl =
     !hasEnded && subscription.subscriptionId
@@ -105,7 +107,7 @@ export default async function SubscriptionPage() {
         addButton={false}
         viewButton={false}
         showSelected={false}
-        searchLabeledProperties={[{ property: "plan", label: "plan" }]}
+        // searchLabeledProperties={[{ property: "plan", label: "plan" }]}
       />
     </div>
   );

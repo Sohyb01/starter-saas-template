@@ -67,7 +67,7 @@ export function UserNav2({ collapsed = false }: { collapsed?: boolean }) {
 
           {!collapsed && (
             <>
-              <div className="flex flex-col text-detail">
+              <div className="text-detail -space-y-0.5">
                 <p className="capitalize break-all line-clamp-1">
                   {session.user.name}
                 </p>
